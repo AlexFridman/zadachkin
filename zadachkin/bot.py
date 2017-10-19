@@ -78,6 +78,7 @@ def get_history(bot, update):
 
 
 def update_sources(bot, update):
+    logger.info('Updating sources')
     task_list_generator.replace_sources(list(Source.objects))
 
 
