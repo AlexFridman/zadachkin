@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-
+import datetime
 import logging
-import os
+import sys
+from configparser import ConfigParser
 
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import (Updater, CommandHandler, ConversationHandler, RegexHandler)
 # Enable logging
 from telegram.replykeyboardremove import ReplyKeyboardRemove
+
+from zadachkin.db import Mongo, init_mongodb
+from zadachkin.db.entities import Source, TaskList
+from zadachkin.task_list_generator import TaskListGenerator
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -17,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 reply_keyboard = [['Получить задачки'], ['Показать историю']]
 markup = ReplyKeyboardMarkup(reply_keyboard, resize_keyboard=True)
+task_list_generator = TaskListGenerator()
 
 
 def start(bot, update):
@@ -43,31 +48,51 @@ def error(bot, update, error):
 
 
 def get_tasks(bot, update):
-    update.message.reply_text(
-        'Твое задание на сегодня:\n'
-        'решать задачки'
-    )
+    logger.info('User {} requested task list'.format(update.message.from_user.name))
+    task_list = task_list_generator.generate_task_list()
+
+    tasks_str = []
+    task_template = '{}. {}, {}'
+    for i, (source, task_i) in enumerate(task_list):
+        tasks_str.append(task_template.format(i + 1, source.author, task_i))
+    formatted_task_list = '\n'.join(tasks_str)
+
+    try:
+        TaskList(user_id=update.message.from_user.name,
+                 timestamp=datetime.datetime.utcnow(),
+                 tasks=task_list).save()
+    except Exception as e:
+        logger.error('Failed to save task list')
+
+    update.message.reply_text('Твое задание на сегодня:\n' + formatted_task_list + '\n\nВремя пошло!')
 
 
 def get_history(bot, update):
+    logger.info('User {} requested history'.format(update.message.from_user.name))
+    # TODO: implement
     update.message.reply_text(
         'Твоя история:\n'
-        'дата: задачки\n'
-        'дата: задачки\n'
+        '(пока не работает :( )\n'
+        'Прокрути чат выше!\n'
     )
 
 
-def main():
-    # Create the EventHandler and pass it your bot's token.
-    updater = Updater(os.environ.get('TOKEN'))
+def update_sources(bot, update):
+    task_list_generator.replace_sources(list(Source.objects))
 
-    # Get the dispatcher to register handlers
+
+def setup_bot(updater):
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('cancel', cancel))
+
     dp.add_handler(CommandHandler('tasks', get_tasks))
     dp.add_handler(CommandHandler('history', get_history))
+
+    # TODO: make available only for admins
+    dp.add_handler(CommandHandler('update_sources', get_history))
+
     dp.add_handler(RegexHandler('Получить задачки', get_tasks))
     dp.add_handler(RegexHandler('Показать историю', get_history))
 
@@ -77,9 +102,32 @@ def main():
     # Start the Bot
     updater.start_polling()
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
+
+def main():
+    try:
+        config_path = sys.argv[1]
+    except IndexError:
+        config_path = 'config.ini'
+
+    # parse config
+    config = ConfigParser()
+    config.read(config_path)
+
+    # init db connection
+    host_port = ':'.join((config.get('mongodb', 'host'), config.get('mongodb', 'port')))
+    username = config.get('mongodb', 'username')
+    password = config.get('mongodb', 'password')
+    db_name = config.get('mongodb', 'db_name')
+
+    conf = Mongo(db_name, [host_port], username, password)
+    init_mongodb(conf.connection)
+
+    # load sources from db
+    update_sources(None, None)
+
+    # setup tg bot
+    updater = Updater(config.get('telegram', 'access_token'))
+    setup_bot(updater)
     updater.idle()
 
 
