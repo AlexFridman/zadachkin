@@ -25,8 +25,6 @@ class TaskListGenerator:
         if len(task_i) == 5:
             return '.'.join((task_i[0], task_i[1], task_i[2:]))
 
-        logger.error('Encouraged with very long task number {}'.format(task_i))
-
         return task_i
 
     def generate_task_list(self):
