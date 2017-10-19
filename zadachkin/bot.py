@@ -91,7 +91,7 @@ def setup_bot(updater):
     dp.add_handler(CommandHandler('history', get_history))
 
     # TODO: make available only for admins
-    dp.add_handler(CommandHandler('update_sources', get_history))
+    dp.add_handler(CommandHandler('update_sources', update_sources))
 
     dp.add_handler(RegexHandler('Получить задачки', get_tasks))
     dp.add_handler(RegexHandler('Показать историю', get_history))
