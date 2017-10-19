@@ -1,1 +1,5 @@
+numpy
+prwlock
+pymongo
+mongoengine
 python-telegram-bot
