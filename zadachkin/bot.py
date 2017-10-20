@@ -53,14 +53,18 @@ def get_tasks(bot, update):
     tasks_str = []
     task_template = '{}. {}, {} (стр. {} - {})'
 
+    simple_task_list = []
+
     for i, (source, task_i, (start_page, end_page)) in enumerate(task_list):
         tasks_str.append(task_template.format(i + 1, source.author, task_i, start_page, end_page))
+        simple_task_list.append((source.str_id, task_i))
+
     formatted_task_list = '\n'.join(tasks_str)
 
     try:
         TaskList(user_id=update.message.from_user.name,
                  timestamp=datetime.datetime.utcnow(),
-                 tasks=task_list).save()
+                 tasks=simple_task_list).save()
     except Exception as e:
         logger.error('Failed to save task list')
 
