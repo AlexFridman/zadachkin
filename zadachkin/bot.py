@@ -7,7 +7,6 @@ from configparser import ConfigParser
 
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import (Updater, CommandHandler, ConversationHandler, RegexHandler)
-# Enable logging
 from telegram.replykeyboardremove import ReplyKeyboardRemove
 
 from zadachkin.db import Mongo, init_mongodb
