@@ -16,7 +16,7 @@ class Source(me.Document):
         return str(self.id)
 
     def peek_task(self):
-        interval_sizes = [r - l + 1 for r, l in self.intervals]
+        interval_sizes = [np.sqrt(r - l + 1) for r, l in self.intervals]
         total_size = sum(interval_sizes)
         interval_probs = [size / total_size for size in interval_sizes]
         interval_idxs = np.arange(len(self.intervals))
