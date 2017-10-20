@@ -35,6 +35,8 @@ class TaskListGenerator:
             task_list = []
 
             for source in self._sources:
-                task_list.append((source, self.format_task_number(source.peek_task())))
+                task_i, page_interval = source.peek_task()
+
+                task_list.append((source, self.format_task_number(task_i), page_interval))
 
             return task_list

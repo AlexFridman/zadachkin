@@ -51,9 +51,10 @@ def get_tasks(bot, update):
     task_list = task_list_generator.generate_task_list()
 
     tasks_str = []
-    task_template = '{}. {}, {}'
-    for i, (source, task_i) in enumerate(task_list):
-        tasks_str.append(task_template.format(i + 1, source.author, task_i))
+    task_template = '{}. {}, {} (стр. {} - {})'
+
+    for i, (source, task_i, (start_page, end_page)) in enumerate(task_list):
+        tasks_str.append(task_template.format(i + 1, source.author, task_i, start_page, end_page))
     formatted_task_list = '\n'.join(tasks_str)
 
     try:
